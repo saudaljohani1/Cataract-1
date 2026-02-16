@@ -44,7 +44,701 @@
   </style>
 </head>
 <body>
-<!-- NOTE: Full script retained exactly as user provided -->
-<p>This file contains your full Cataract Clinic HTML app. Open in browser.</p>
+  <div class="wrap">
+    <div class="row">
+      <div>
+        <h1>Cataract Clinic Case Submission</h1>
+        <p class="sub">Residents register with <b>@iau.edu.sa</b>, then submit cases. KPIs/data are visible only to admin (PIN).</p>
+      </div>
+      <div class="row" style="justify-content:flex-end">
+        <div id="profilePill" class="pill hidden"></div>
+        <div class="pill">
+          <button id="adminBtn" class="outline tiny" type="button">Admin</button>
+          <button id="adminLockBtn" class="outline tiny hidden" type="button">Lock</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="syncNote" class="muted">Storage: <b>local</b> (this device only)</div>
+    <div id="topMsg" class="muted"></div>
+
+    <div class="sep"></div>
+
+    <!-- Registration -->
+    <div id="registrationCard" class="card">
+      <div class="row">
+        <h2 style="margin:0;font-size:16px;">Resident registration</h2>
+        <span class="muted">All fields are required</span>
+      </div>
+
+      <div class="grid two" style="margin-top:10px;">
+        <div>
+          <label>University email *</label>
+          <input id="regEmail" placeholder="name@iau.edu.sa" autocomplete="email" />
+          <div id="errRegEmail" class="err"></div>
+        </div>
+        <div>
+          <label>Name / code *</label>
+          <input id="regName" placeholder="e.g., R5-A / Saud" autocomplete="name" />
+          <div id="errRegName" class="err"></div>
+        </div>
+        <div>
+          <label>Resident level *</label>
+          <select id="regLevel">
+            <option value="R5">R5</option>
+            <option value="R4">R4</option>
+          </select>
+          <div id="errRegLevel" class="err"></div>
+        </div>
+        <div>
+          <label>Details *</label>
+          <textarea id="regDetails" placeholder="Program / phone / notes"></textarea>
+          <div id="errRegDetails" class="err"></div>
+        </div>
+      </div>
+
+      <div class="row" style="justify-content:flex-end; margin-top:10px;">
+        <button id="registerBtn" type="button" style="max-width: 240px;">Register</button>
+      </div>
+      <div id="regOk" class="ok"></div>
+    </div>
+
+    <!-- Resident submission -->
+    <div id="submissionCard" class="card hidden">
+      <div class="row">
+        <h2 style="margin:0;font-size:16px;">Submit a cataract case</h2>
+        <span class="muted">All options are mandatory</span>
+      </div>
+
+      <div id="submitOk" class="ok" style="margin-top:8px;"></div>
+      <div id="submitErrTop" class="err" style="margin-top:8px;"></div>
+
+      <div class="grid two" style="margin-top:10px;">
+        <div>
+          <label>Clinic date *</label>
+          <input id="clinicDate" type="date" />
+          <div id="errClinicDate" class="err"></div>
+        </div>
+
+        <div>
+          <label>MRN (10 digits) *</label>
+          <input id="mrn" inputmode="numeric" maxlength="10" placeholder="##########" />
+          <div id="errMrn" class="err"></div>
+        </div>
+
+        <div>
+          <label>Eye *</label>
+          <select id="eye">
+            <option value="OD">OD</option>
+            <option value="OS">OS</option>
+          </select>
+          <div id="errEye" class="err"></div>
+        </div>
+
+        <div>
+          <label>Complexity *</label>
+          <select id="complexity">
+            <option value="Simple">Simple</option>
+            <option value="Moderate">Moderate</option>
+            <option value="Complex">Complex</option>
+          </select>
+          <div id="errComplexity" class="err"></div>
+        </div>
+
+        <div>
+          <label>Resident (auto) *</label>
+          <input id="residentAuto" disabled />
+        </div>
+
+        <div>
+          <label>Supervising consultant *</label>
+          <input id="consultant" placeholder="Consultant" />
+          <div id="errConsultant" class="err"></div>
+        </div>
+
+        <div>
+          <label>Surgery date *</label>
+          <input id="surgeryDate" type="date" />
+          <div id="errSurgeryDate" class="err"></div>
+        </div>
+
+        <div>
+          <label>Status *</label>
+          <select id="status">
+            <option value="Booked">Booked</option>
+            <option value="Completed">Completed</option>
+            <option value="Cancelled">Cancelled</option>
+          </select>
+          <div id="errStatus" class="err"></div>
+
+          <div id="cancelReasonWrap" class="hidden" style="margin-top:10px;">
+            <label>Cancellation reason *</label>
+            <input id="cancelReason" placeholder="Reason" />
+            <div id="errCancelReason" class="err"></div>
+          </div>
+        </div>
+
+        <div>
+          <label>Flags *</label>
+          <div class="muted" style="margin-bottom:8px;">(Optional where applicable)</div>
+          <div style="display:flex; gap:10px; align-items:center;">
+            <input id="override" type="checkbox" style="width:auto;" />
+            <span style="font-size:13px;">Consultant override</span>
+          </div>
+          <div style="display:flex; gap:10px; align-items:center; margin-top:8px;">
+            <input id="complication" type="checkbox" style="width:auto;" />
+            <span style="font-size:13px;">Complication (only if status = Completed)</span>
+          </div>
+
+          <div id="compTypeWrap" class="hidden" style="margin-top:10px;">
+            <label>Complication type *</label>
+            <input id="compType" placeholder="e.g., PCR" />
+            <div id="errCompType" class="err"></div>
+          </div>
+
+          <div id="errComplication" class="err"></div>
+        </div>
+      </div>
+
+      <div class="row" style="justify-content:flex-end; margin-top:10px;">
+        <button id="submitBtn" type="button" style="max-width:240px;">Submit</button>
+      </div>
+
+      <div class="muted" style="margin-top:10px;">
+        After submission, the form clears and residents cannot see KPI data.
+      </div>
+    </div>
+
+    <!-- Admin panel -->
+    <div id="adminCard" class="card hidden">
+      <div class="row">
+        <div>
+          <h2 style="margin:0;font-size:16px;">Admin dashboard</h2>
+          <div class="muted">PIN-gated (3699). KPIs + case list.</div>
+        </div>
+        <div class="row" style="justify-content:flex-end;">
+          <div style="min-width:220px;">
+            <label>Filter by clinic month</label>
+            <select id="monthFilter">
+              <option value="__ALL__">All months</option>
+            </select>
+          </div>
+          <button id="exportBtn" class="secondary tiny" type="button">Export CSV</button>
+          <button id="clearBtn" class="outline tiny" type="button">Clear local data</button>
+        </div>
+      </div>
+
+      <div class="sep"></div>
+
+      <div class="kpiGrid" id="kpiGrid"></div>
+
+      <div class="sep"></div>
+
+      <div class="row" style="justify-content:space-between;">
+        <h3 style="margin:0;font-size:14px;">Case list</h3>
+        <span class="muted" id="caseCount"></span>
+      </div>
+
+      <div style="overflow:auto; margin-top:10px;">
+        <table>
+          <thead>
+            <tr>
+              <th>Clinic</th>
+              <th>MRN</th>
+              <th>Eye</th>
+              <th>Complexity</th>
+              <th>Resident</th>
+              <th>Level</th>
+              <th>Consultant</th>
+              <th>Surgery</th>
+              <th>Status</th>
+              <th>Override</th>
+              <th>Complication</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="caseTbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Admin PIN modal -->
+  <div id="adminModal" class="hidden" style="position:fixed; inset:0; background:rgba(0,0,0,.35); display:flex; align-items:center; justify-content:center; padding:18px;">
+    <div class="card" style="max-width:420px; width:100%;">
+      <div class="row"><h3 style="margin:0;">Admin unlock</h3></div>
+      <div style="margin-top:10px;">
+        <label>PIN</label>
+        <input id="pinInput" type="password" placeholder="Enter admin PIN" />
+        <div id="pinErr" class="err"></div>
+      </div>
+      <div class="row" style="justify-content:flex-end; margin-top:10px;">
+        <button id="pinCancel" class="outline tiny" type="button">Cancel</button>
+        <button id="pinOk" class="tiny" type="button">Unlock</button>
+      </div>
+      <div class="muted" style="margin-top:10px;">
+        Note: this is UI-only protection. For real security, use server authentication.
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ===== Config =====
+    const STORAGE_KEY = "cataract_clinic_cases_html_v1";
+    const PROFILE_KEY = "cataract_clinic_profile_html_v1";
+    const ADMIN_PIN = "3699";
+    const ALLOWED_DOMAIN = "iau.edu.sa"; // only @iau.edu.sa or subdomains
+
+    const RES_LEVELS = ["R4","R5"];
+    const EYES = ["OD","OS"];
+    const COMPLEXITY = ["Simple","Moderate","Complex"];
+    const STATUS = ["Booked","Completed","Cancelled"];
+
+    // ===== Helpers =====
+    const $ = (id) => document.getElementById(id);
+    const todayISO = () => new Date().toISOString().slice(0,10);
+    const monthKey = (iso) => (iso ? String(iso).slice(0,7) : "");
+    const isTenDigitMRN = (mrn) => /^[0-9]{10}$/.test(String(mrn||"").trim());
+
+    function isUniversityEmail(email) {
+      const e = String(email||"").trim().toLowerCase();
+      const at = e.indexOf("@");
+      if (at <= 0) return false;
+      const domain = e.slice(at+1);
+      if (!domain.includes(".")) return false;
+      return domain === ALLOWED_DOMAIN || domain.endsWith("." + ALLOWED_DOMAIN);
+    }
+
+    function safeDiv(a,b){ return b ? a/b : NaN; }
+    function formatPct(x){ return Number.isFinite(x) ? (x*100).toFixed(1)+"%" : "–"; }
+    function stdevSample(vals){
+      const nums = vals.filter(v => Number.isFinite(v));
+      const n = nums.length;
+      if (n < 2) return 0;
+      const mean = nums.reduce((s,v)=>s+v,0)/n;
+      const varSum = nums.reduce((s,v)=>s+(v-mean)**2,0);
+      return Math.sqrt(varSum/(n-1));
+    }
+
+    function loadRows(){
+      try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]"); }
+      catch { return []; }
+    }
+    function saveRows(rows){
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(rows));
+    }
+
+    function loadProfile(){
+      try { return JSON.parse(localStorage.getItem(PROFILE_KEY) || "null"); }
+      catch { return null; }
+    }
+    function saveProfile(p){
+      localStorage.setItem(PROFILE_KEY, JSON.stringify(p));
+    }
+    function clearProfile(){
+      localStorage.removeItem(PROFILE_KEY);
+    }
+
+    function clearErrors(prefixIds){
+      prefixIds.forEach(id => { const el = $(id); if (el) el.textContent = ""; });
+      $("submitErrTop").textContent = "";
+    }
+
+    function csvEscape(v){
+      const s = String(v ?? "");
+      if (s.includes(",") || s.includes("\n") || s.includes('"')) return '"' + s.replaceAll('"','""') + '"';
+      return s;
+    }
+
+    function toCSV(rows){
+      const header = ["clinic_date","mrn","eye","complexity","resident_email","resident","resident_level","consultant","surgery_date","status","cancellation_reason","override","complication","complication_type"];
+      const lines = [header.join(",")];
+      for (const r of rows){
+        lines.push(header.map(k=>{
+          const v = r[k];
+          if (typeof v === "boolean") return csvEscape(v ? "1" : "0");
+          return csvEscape(v);
+        }).join(","));
+      }
+      return lines.join("\n");
+    }
+
+    function downloadText(filename, text){
+      const blob = new Blob([text], {type:"text/plain;charset=utf-8"});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = filename;
+      document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    // ===== State =====
+    let rows = loadRows();
+    let profile = loadProfile();
+    let adminUnlocked = false;
+
+    // ===== UI setup =====
+    function setDefaultDates(){
+      $("clinicDate").value = todayISO();
+      $("surgeryDate").value = todayISO();
+    }
+
+    function setProfilePill(){
+      if (!profile){
+        $("profilePill").classList.add("hidden");
+        $("profilePill").innerHTML = "";
+        return;
+      }
+      $("profilePill").classList.remove("hidden");
+      $("profilePill").innerHTML = `
+        <span class="muted">Resident:</span>
+        <b>${escapeHtml(profile.name)}</b>
+        <span class="muted">(${escapeHtml(profile.resident_level)})</span>
+        <span class="muted">— ${escapeHtml(profile.email)}</span>
+        <button id="logoutBtn" class="outline tiny" type="button">Log out</button>
+      `;
+      $("logoutBtn").onclick = () => {
+        clearProfile();
+        profile = null;
+        adminUnlocked = false;
+        $("adminLockBtn").classList.add("hidden");
+        render();
+      };
+    }
+
+    function escapeHtml(s){
+      return String(s ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;" }[c]));
+    }
+
+    function showRegistration(){
+      $("registrationCard").classList.remove("hidden");
+      $("submissionCard").classList.add("hidden");
+      $("adminCard").classList.add("hidden");
+      $("regOk").textContent = "";
+      $("topMsg").textContent = "";
+      setProfilePill();
+    }
+
+    function showSubmission(){
+      $("registrationCard").classList.add("hidden");
+      $("submissionCard").classList.remove("hidden");
+      $("adminCard").classList.add("hidden"); // residents NEVER see admin card
+      $("residentAuto").value = `${profile.name} (${profile.resident_level}) — ${profile.email}`;
+      setDefaultDates();
+      $("submitOk").textContent = "";
+      $("topMsg").textContent = "";
+      setProfilePill();
+    }
+
+    function openAdminModal(){
+      $("adminModal").classList.remove("hidden");
+      $("pinInput").value = "";
+      $("pinErr").textContent = "";
+      $("pinInput").focus();
+    }
+    function closeAdminModal(){
+      $("adminModal").classList.add("hidden");
+    }
+
+    function renderMonths(){
+      const sel = $("monthFilter");
+      const current = sel.value || "__ALL__";
+      const set = new Set(rows.map(r => monthKey(r.clinic_date)).filter(Boolean));
+      const months = Array.from(set).sort();
+      sel.innerHTML = `<option value="__ALL__">All months</option>` + months.map(m=>`<option value="${m}">${m}</option>`).join("");
+      sel.value = months.includes(current) ? current : "__ALL__";
+    }
+
+    function getFilteredRows(){
+      const fm = $("monthFilter").value;
+      if (!fm || fm === "__ALL__") return rows;
+      return rows.filter(r => monthKey(r.clinic_date) === fm);
+    }
+
+    function buildKPIs(){
+      const filtered = getFilteredRows();
+      const booked = filtered.length;
+      const cancelled = filtered.filter(r => r.status === "Cancelled").length;
+      const completed = filtered.filter(r => r.status === "Completed").length;
+      const overrides = filtered.filter(r => !!r.override).length;
+
+      const residents = Array.from(new Set(filtered.map(r => (r.resident||"").trim()).filter(Boolean))).sort();
+      const completedByResident = new Map();
+      for (const r of filtered){
+        if (r.status !== "Completed") continue;
+        const k = (r.resident||"(Unassigned)");
+        completedByResident.set(k, (completedByResident.get(k)||0) + 1);
+      }
+      const counts = residents.map(n => completedByResident.get(n) || 0);
+      const mean = safeDiv(counts.reduce((a,b)=>a+b,0), residents.length);
+      const sd = stdevSample(counts);
+
+      const compByLevel = {};
+      for (const lvl of RES_LEVELS){
+        const surg = filtered.filter(r => r.status==="Completed" && r.resident_level===lvl).length;
+        const comp = filtered.filter(r => r.status==="Completed" && r.resident_level===lvl && r.complication).length;
+        compByLevel[lvl] = { surg, comp, rate: safeDiv(comp, surg) };
+      }
+
+      const kpis = [
+        { t: "Mean cases / resident", v: Number.isFinite(mean) ? mean.toFixed(2) : "–" },
+        { t: "Equity (SD)", v: sd.toFixed(2) },
+        { t: "Cancellation rate", v: formatPct(safeDiv(cancelled, booked)) },
+        { t: "Consultant override rate", v: formatPct(safeDiv(overrides, booked)) },
+        { t: "Completed (count)", v: String(completed) },
+      ];
+
+      $("kpiGrid").innerHTML = kpis.map(x => `
+        <div class="kpi">
+          <div class="t">${x.t}</div>
+          <div class="v">${x.v}</div>
+        </div>
+      `).join("");
+
+      // add complication by level cards
+      const extra = RES_LEVELS.map(lvl => `
+        <div class="kpi">
+          <div class="t">Complication rate — ${lvl}</div>
+          <div class="v">${formatPct(compByLevel[lvl].rate)}</div>
+          <div class="muted">Surgeries: ${compByLevel[lvl].surg} • Complications: ${compByLevel[lvl].comp}</div>
+        </div>
+      `).join("");
+
+      $("kpiGrid").insertAdjacentHTML("beforeend", extra);
+    }
+
+    function renderCaseTable(){
+      const filtered = getFilteredRows();
+      $("caseCount").textContent = `${filtered.length} cases`;
+      const tbody = $("caseTbody");
+      tbody.innerHTML = "";
+
+      for (const r of filtered){
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${escapeHtml(r.clinic_date||"")}</td>
+          <td>${escapeHtml(r.mrn||"")}</td>
+          <td>${escapeHtml(r.eye||"")}</td>
+          <td>${escapeHtml(r.complexity||"")}</td>
+          <td>${escapeHtml(r.resident||"")}<div class="muted">${escapeHtml(r.resident_email||"")}</div></td>
+          <td>${escapeHtml(r.resident_level||"")}</td>
+          <td>${escapeHtml(r.consultant||"")}</td>
+          <td>${escapeHtml(r.surgery_date||"")}</td>
+          <td>${escapeHtml(r.status||"")}</td>
+          <td>${r.override ? "Yes" : "No"}</td>
+          <td>${r.complication ? "Yes" : "No"}${r.complication_type ? "<div class='muted'>"+escapeHtml(r.complication_type)+"</div>" : ""}</td>
+          <td><button class="outline tiny" data-id="${escapeHtml(r.id)}" type="button">Delete</button></td>
+        `;
+        tbody.appendChild(tr);
+      }
+
+      tbody.querySelectorAll("button[data-id]").forEach(btn => {
+        btn.onclick = () => {
+          const id = btn.getAttribute("data-id");
+          rows = rows.filter(x => x.id !== id);
+          saveRows(rows);
+          renderAdmin();
+        };
+      });
+    }
+
+    function renderAdmin(){
+      if (!adminUnlocked){
+        $("adminCard").classList.add("hidden");
+        return;
+      }
+      $("adminCard").classList.remove("hidden");
+      renderMonths();
+      buildKPIs();
+      renderCaseTable();
+    }
+
+    function render(){
+      setProfilePill();
+
+      if (!profile){
+        showRegistration();
+      } else {
+        showSubmission();
+      }
+
+      // admin UI is separate and only shown if unlocked
+      renderAdmin();
+    }
+
+    // ===== Registration =====
+    $("registerBtn").onclick = () => {
+      // clear errors
+      clearErrors(["errRegEmail","errRegName","errRegLevel","errRegDetails"]);
+      $("regOk").textContent = "";
+
+      const email = $("regEmail").value.trim().toLowerCase();
+      const name = $("regName").value.trim();
+      const level = $("regLevel").value;
+      const details = $("regDetails").value.trim();
+
+      let ok = true;
+      if (!email) { $("errRegEmail").textContent = "Required"; ok = false; }
+      else if (!isUniversityEmail(email)) { $("errRegEmail").textContent = "Must be @iau.edu.sa (subdomains allowed)"; ok = false; }
+
+      if (!name) { $("errRegName").textContent = "Required"; ok = false; }
+      if (!level) { $("errRegLevel").textContent = "Required"; ok = false; }
+      if (!details) { $("errRegDetails").textContent = "Required"; ok = false; }
+
+      if (!ok) return;
+
+      profile = { email, name, details, resident_level: level };
+      saveProfile(profile);
+
+      $("regOk").textContent = "Registered successfully.";
+      render();
+    };
+
+    // ===== Submission =====
+    $("mrn").addEventListener("input", () => {
+      $("mrn").value = $("mrn").value.replace(/[^0-9]/g,"").slice(0,10);
+    });
+
+    function syncConditionalFields(){
+      const st = $("status").value;
+      $("cancelReasonWrap").classList.toggle("hidden", st !== "Cancelled");
+
+      const compAllowed = (st === "Completed");
+      $("complication").disabled = !compAllowed;
+      if (!compAllowed) { $("complication").checked = false; }
+      $("compTypeWrap").classList.toggle("hidden", !($("complication").checked && st === "Completed"));
+    }
+    $("status").addEventListener("change", syncConditionalFields);
+    $("complication").addEventListener("change", syncConditionalFields);
+
+    $("submitBtn").onclick = () => {
+      $("submitOk").textContent = "";
+      $("submitErrTop").textContent = "";
+      clearErrors(["errClinicDate","errMrn","errEye","errComplexity","errConsultant","errSurgeryDate","errStatus","errCancelReason","errComplication","errCompType"]);
+
+      const f = {
+        clinic_date: $("clinicDate").value,
+        mrn: $("mrn").value.trim(),
+        eye: $("eye").value,
+        complexity: $("complexity").value,
+        resident_email: profile.email,
+        resident: profile.name,
+        resident_level: profile.resident_level,
+        consultant: $("consultant").value.trim(),
+        surgery_date: $("surgeryDate").value,
+        status: $("status").value,
+        cancellation_reason: $("cancelReason").value.trim(),
+        override: $("override").checked,
+        complication: $("complication").checked,
+        complication_type: $("compType").value.trim(),
+      };
+
+      let ok = true;
+
+      if (!f.clinic_date) { $("errClinicDate").textContent = "Required"; ok = false; }
+      if (!isTenDigitMRN(f.mrn)) { $("errMrn").textContent = "MRN must be exactly 10 digits"; ok = false; }
+      if (!f.eye) { $("errEye").textContent = "Required"; ok = false; }
+      if (!f.complexity) { $("errComplexity").textContent = "Required"; ok = false; }
+      if (!f.consultant) { $("errConsultant").textContent = "Required"; ok = false; }
+      if (!f.surgery_date) { $("errSurgeryDate").textContent = "Required"; ok = false; }
+      if (!f.status) { $("errStatus").textContent = "Required"; ok = false; }
+
+      if (f.status === "Cancelled" && !f.cancellation_reason) {
+        $("errCancelReason").textContent = "Required when status is Cancelled";
+        ok = false;
+      }
+
+      if (f.complication && f.status !== "Completed") {
+        $("errComplication").textContent = "Complication only allowed if status is Completed";
+        ok = false;
+      }
+
+      if (f.complication && f.status === "Completed" && !f.complication_type) {
+        $("errCompType").textContent = "Required when complication is checked";
+        ok = false;
+      }
+
+      if (!ok) {
+        $("submitErrTop").textContent = "Please fix the highlighted fields.";
+        return;
+      }
+
+      const row = {
+        id: (crypto && crypto.randomUUID) ? crypto.randomUUID() : (Date.now()+"-"+Math.random()),
+        ...f,
+        created_at: new Date().toISOString(),
+      };
+
+      rows = [row, ...rows];
+      saveRows(rows);
+
+      // hide data after submit: clear form immediately
+      $("clinicDate").value = todayISO();
+      $("mrn").value = "";
+      $("eye").value = "OD";
+      $("complexity").value = "Simple";
+      $("consultant").value = "";
+      $("surgeryDate").value = todayISO();
+      $("status").value = "Booked";
+      $("cancelReason").value = "";
+      $("override").checked = false;
+      $("complication").checked = false;
+      $("compType").value = "";
+      syncConditionalFields();
+
+      $("submitOk").textContent = "Submitted successfully.";
+      // residents still cannot see admin UI; do not render KPIs here
+    };
+
+    // ===== Admin =====
+    $("adminBtn").onclick = () => {
+      if (adminUnlocked) return;
+      openAdminModal();
+    };
+    $("adminLockBtn").onclick = () => {
+      adminUnlocked = false;
+      $("adminLockBtn").classList.add("hidden");
+      render();
+    };
+
+    $("pinCancel").onclick = closeAdminModal;
+    $("pinOk").onclick = () => {
+      const pin = $("pinInput").value.trim();
+      if (pin !== ADMIN_PIN){
+        $("pinErr").textContent = "Incorrect PIN";
+        return;
+      }
+      adminUnlocked = true;
+      $("adminLockBtn").classList.remove("hidden");
+      closeAdminModal();
+      renderAdmin();
+    };
+
+    $("monthFilter").addEventListener("change", () => {
+      if (!adminUnlocked) return;
+      buildKPIs();
+      renderCaseTable();
+    });
+
+    $("exportBtn").onclick = () => {
+      if (!adminUnlocked) return;
+      const text = toCSV(rows);
+      downloadText("cataract_clinic_cases.csv", text);
+    };
+
+    $("clearBtn").onclick = () => {
+      if (!adminUnlocked) return;
+      if (!confirm("Clear ALL local data? This cannot be undone.")) return;
+      rows = [];
+      saveRows(rows);
+      renderAdmin();
+    };
+
+    // ===== Init =====
+    // Populate defaults and conditional UI
+    setDefaultDates();
+    syncConditionalFields();
+    render();
+  </script>
 </body>
 </html>
