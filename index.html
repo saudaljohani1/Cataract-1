@@ -205,7 +205,57 @@
       </div>
 
       <div class="muted" style="margin-top:10px;">
-        After submission, the form clears and residents cannot see KPI data.
+        Residents can view <b>their own submissions</b> (My submissions). KPI data remains admin-only.
+      </div>
+    </div>
+
+    <!-- Resident: My submissions -->
+    <div id="myCasesCard" class="card hidden">
+      <div class="row">
+        <div>
+          <h2 style="margin:0;font-size:16px;">My submissions</h2>
+          <div class="muted">Shows only cases submitted with your email.</div>
+        </div>
+        <div class="row" style="justify-content:flex-end;">
+          <div style="min-width:220px;">
+            <label>Filter by clinic month</label>
+            <select id="myMonthFilter">
+              <option value="__ALL__">All months</option>
+            </select>
+          </div>
+          <button id="myExportBtn" class="secondary tiny" type="button">Export my CSV</button>
+        </div>
+      </div>
+
+      <div class="sep"></div>
+
+      <div class="row" style="justify-content:space-between;">
+        <h3 style="margin:0;font-size:14px;">My case list</h3>
+        <span class="muted" id="myCaseCount"></span>
+      </div>
+
+      <div style="overflow:auto; margin-top:10px;">
+        <table>
+          <thead>
+            <tr>
+              <th>Clinic</th>
+              <th>MRN</th>
+              <th>Eye</th>
+              <th>Complexity</th>
+              <th>Consultant</th>
+              <th>Surgery</th>
+              <th>Status</th>
+              <th>Override</th>
+              <th>Complication</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="myCaseTbody"></tbody>
+        </table>
+      </div>
+
+      <div class="muted" style="margin-top:10px;">
+        You can delete only your own submissions (on this device).
       </div>
     </div>
 
@@ -290,8 +340,6 @@
     const ALLOWED_DOMAIN = "iau.edu.sa"; // only @iau.edu.sa or subdomains
 
     const RES_LEVELS = ["R4","R5"];
-    const EYES = ["OD","OS"];
-    const COMPLEXITY = ["Simple","Moderate","Complex"];
     const STATUS = ["Booked","Completed","Cancelled"];
 
     // ===== Helpers =====
@@ -372,10 +420,17 @@
       URL.revokeObjectURL(url);
     }
 
+    function escapeHtml(s){
+      return String(s ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;" }[c]));
+    }
+
     // ===== State =====
     let rows = loadRows();
     let profile = loadProfile();
     let adminUnlocked = false;
+
+    // NEW: resident view mode
+    let residentView = "submit"; // "submit" | "my"
 
     // ===== UI setup =====
     function setDefaultDates(){
@@ -395,24 +450,28 @@
         <b>${escapeHtml(profile.name)}</b>
         <span class="muted">(${escapeHtml(profile.resident_level)})</span>
         <span class="muted">— ${escapeHtml(profile.email)}</span>
+        <button id="goSubmitBtn" class="outline tiny" type="button">Submit</button>
+        <button id="goMyBtn" class="outline tiny" type="button">My submissions</button>
         <button id="logoutBtn" class="outline tiny" type="button">Log out</button>
       `;
+
+      $("goSubmitBtn").onclick = () => { residentView = "submit"; render(); };
+      $("goMyBtn").onclick = () => { residentView = "my"; render(); };
+
       $("logoutBtn").onclick = () => {
         clearProfile();
         profile = null;
         adminUnlocked = false;
+        residentView = "submit";
         $("adminLockBtn").classList.add("hidden");
         render();
       };
     }
 
-    function escapeHtml(s){
-      return String(s ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;" }[c]));
-    }
-
     function showRegistration(){
       $("registrationCard").classList.remove("hidden");
       $("submissionCard").classList.add("hidden");
+      $("myCasesCard").classList.add("hidden");
       $("adminCard").classList.add("hidden");
       $("regOk").textContent = "";
       $("topMsg").textContent = "";
@@ -422,12 +481,24 @@
     function showSubmission(){
       $("registrationCard").classList.add("hidden");
       $("submissionCard").classList.remove("hidden");
+      $("myCasesCard").classList.add("hidden");
       $("adminCard").classList.add("hidden"); // residents NEVER see admin card
       $("residentAuto").value = `${profile.name} (${profile.resident_level}) — ${profile.email}`;
       setDefaultDates();
       $("submitOk").textContent = "";
       $("topMsg").textContent = "";
       setProfilePill();
+    }
+
+    function showMyCases(){
+      $("registrationCard").classList.add("hidden");
+      $("submissionCard").classList.add("hidden");
+      $("myCasesCard").classList.remove("hidden");
+      $("adminCard").classList.add("hidden"); // residents NEVER see admin card
+      $("topMsg").textContent = "";
+      setProfilePill();
+      renderMyMonths();
+      renderMyCaseTable();
     }
 
     function openAdminModal(){
@@ -453,6 +524,71 @@
       const fm = $("monthFilter").value;
       if (!fm || fm === "__ALL__") return rows;
       return rows.filter(r => monthKey(r.clinic_date) === fm);
+    }
+
+    // ===== Resident: My submissions (NEW) =====
+    function myRowsAll(){
+      if (!profile) return [];
+      return rows.filter(r => String(r.resident_email||"").toLowerCase() === String(profile.email||"").toLowerCase());
+    }
+
+    function myRowsFiltered(){
+      const all = myRowsAll();
+      const fm = $("myMonthFilter").value;
+      if (!fm || fm === "__ALL__") return all;
+      return all.filter(r => monthKey(r.clinic_date) === fm);
+    }
+
+    function renderMyMonths(){
+      const sel = $("myMonthFilter");
+      const current = sel.value || "__ALL__";
+      const set = new Set(myRowsAll().map(r => monthKey(r.clinic_date)).filter(Boolean));
+      const months = Array.from(set).sort();
+      sel.innerHTML = `<option value="__ALL__">All months</option>` + months.map(m=>`<option value="${m}">${m}</option>`).join("");
+      sel.value = months.includes(current) ? current : "__ALL__";
+    }
+
+    function renderMyCaseTable(){
+      const filtered = myRowsFiltered();
+      $("myCaseCount").textContent = `${filtered.length} cases`;
+
+      const tbody = $("myCaseTbody");
+      tbody.innerHTML = "";
+
+      for (const r of filtered){
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${escapeHtml(r.clinic_date||"")}</td>
+          <td>${escapeHtml(r.mrn||"")}</td>
+          <td>${escapeHtml(r.eye||"")}</td>
+          <td>${escapeHtml(r.complexity||"")}</td>
+          <td>${escapeHtml(r.consultant||"")}</td>
+          <td>${escapeHtml(r.surgery_date||"")}</td>
+          <td>${escapeHtml(r.status||"")}${r.status==="Cancelled" && r.cancellation_reason ? "<div class='muted'>"+escapeHtml(r.cancellation_reason)+"</div>" : ""}</td>
+          <td>${r.override ? "Yes" : "No"}</td>
+          <td>${r.complication ? "Yes" : "No"}${r.complication_type ? "<div class='muted'>"+escapeHtml(r.complication_type)+"</div>" : ""}</td>
+          <td><button class="outline tiny" data-id="${escapeHtml(r.id)}" type="button">Delete</button></td>
+        `;
+        tbody.appendChild(tr);
+      }
+
+      tbody.querySelectorAll("button[data-id]").forEach(btn => {
+        btn.onclick = () => {
+          const id = btn.getAttribute("data-id");
+          const target = rows.find(x => x.id === id);
+          // Extra guard: only allow deleting own rows
+          if (!target || String(target.resident_email||"").toLowerCase() !== String(profile.email||"").toLowerCase()){
+            alert("You can only delete your own submissions.");
+            return;
+          }
+          if (!confirm("Delete this submission?")) return;
+
+          rows = rows.filter(x => x.id !== id);
+          saveRows(rows);
+          renderMyMonths();
+          renderMyCaseTable();
+        };
+      });
     }
 
     function buildKPIs(){
@@ -495,7 +631,6 @@
         </div>
       `).join("");
 
-      // add complication by level cards
       const extra = RES_LEVELS.map(lvl => `
         <div class="kpi">
           <div class="t">Complication rate — ${lvl}</div>
@@ -559,7 +694,8 @@
       if (!profile){
         showRegistration();
       } else {
-        showSubmission();
+        if (residentView === "my") showMyCases();
+        else showSubmission();
       }
 
       // admin UI is separate and only shown if unlocked
@@ -568,7 +704,6 @@
 
     // ===== Registration =====
     $("registerBtn").onclick = () => {
-      // clear errors
       clearErrors(["errRegEmail","errRegName","errRegLevel","errRegDetails"]);
       $("regOk").textContent = "";
 
@@ -591,6 +726,7 @@
       saveProfile(profile);
 
       $("regOk").textContent = "Registered successfully.";
+      residentView = "submit";
       render();
     };
 
@@ -672,7 +808,6 @@
       rows = [row, ...rows];
       saveRows(rows);
 
-      // hide data after submit: clear form immediately
       $("clinicDate").value = todayISO();
       $("mrn").value = "";
       $("eye").value = "OD";
@@ -687,7 +822,9 @@
       syncConditionalFields();
 
       $("submitOk").textContent = "Submitted successfully.";
-      // residents still cannot see admin UI; do not render KPIs here
+
+      // keep "My submissions" accurate if they switch after submit
+      if ($("myMonthFilter")) renderMyMonths();
     };
 
     // ===== Admin =====
@@ -732,10 +869,22 @@
       rows = [];
       saveRows(rows);
       renderAdmin();
+      if (profile) { renderMyMonths(); renderMyCaseTable(); }
+    };
+
+    // ===== Resident: My submissions events (NEW) =====
+    $("myMonthFilter").addEventListener("change", () => {
+      if (!profile) return;
+      renderMyCaseTable();
+    });
+
+    $("myExportBtn").onclick = () => {
+      if (!profile) return;
+      const text = toCSV(myRowsFiltered());
+      downloadText("my_cataract_cases.csv", text);
     };
 
     // ===== Init =====
-    // Populate defaults and conditional UI
     setDefaultDates();
     syncConditionalFields();
     render();
