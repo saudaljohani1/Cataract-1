@@ -1,4 +1,15 @@
-<!doctype html>
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+    <meta charset="UTF-8">
+    <title>Untitled</title>
+    
+
+  </head>
+    
+  <body>
+  <!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
@@ -31,15 +42,9 @@
     .ok  { color: #065f46; font-size: 12px; }
     .sep { height: 1px; background: var(--b); margin: 14px 0; }
     .hidden { display:none !important; }
-    .kpiGrid { display:grid; grid-template-columns: 1fr; gap: 10px; }
-    @media (min-width: 900px) { .kpiGrid { grid-template-columns: repeat(5, 1fr); } }
-    .kpi { padding: 12px; border-radius: 16px; border:1px solid var(--b); background:#fff; }
-    .kpi .t { font-size: 12px; color: var(--m); }
-    .kpi .v { margin-top: 6px; font-size: 22px; font-weight: 700; }
     table { width:100%; border-collapse: collapse; font-size: 13px; }
     th, td { border-bottom: 1px solid var(--b); padding: 8px; text-align: left; vertical-align: top; }
     th { color: var(--m); font-weight: 600; }
-    .actions { display:flex; gap: 8px; }
     .tiny { width:auto; padding: 8px 10px; border-radius: 12px; }
   </style>
 </head>
@@ -48,60 +53,47 @@
     <div class="row">
       <div>
         <h1>Cataract Clinic Case Submission</h1>
-        <p class="sub">Residents register with <b>University Email</b>, then submit cases.</p>
+        <p class="sub">Login is limited to a fixed list of users (username + passcode). Residents can submit cases and view only their own submissions. Admin sees all cases.</p>
       </div>
       <div class="row" style="justify-content:flex-end">
         <div id="profilePill" class="pill hidden"></div>
-        <div class="pill">
-          <button id="adminBtn" class="outline tiny" type="button">Admin</button>
-          <button id="adminLockBtn" class="outline tiny hidden" type="button">Lock</button>
-        </div>
       </div>
     </div>
 
-    <div id="syncNote" class="muted">Storage: <b>local</b> (this device only)</div>
+    <div id="syncNote" class="muted">Storage: <b>Firestore (online)</b></div>
     <div id="topMsg" class="muted"></div>
 
     <div class="sep"></div>
 
-    <!-- Registration -->
-    <div id="registrationCard" class="card">
+    <!-- Login -->
+    <div id="loginCard" class="card">
       <div class="row">
-        <h2 style="margin:0;font-size:16px;">Resident registration</h2>
-        <span class="muted">All fields are required</span>
+        <h2 style="margin:0;font-size:16px;">Login</h2>
+        <span class="muted">Select your name and enter your passcode</span>
       </div>
 
       <div class="grid two" style="margin-top:10px;">
         <div>
-          <label>University email *</label>
-          <input id="regEmail" placeholder="name@iau.edu.sa" autocomplete="email" />
-          <div id="errRegEmail" class="err"></div>
+          <label>User *</label>
+          <select id="loginUser"></select>
+          <div id="errLoginUser" class="err"></div>
         </div>
         <div>
-          <label>Name *</label>
-          <input id="regName" placeholder="e.g., Your name / Saud" autocomplete="name" />
-          <div id="errRegName" class="err"></div>
-        </div>
-        <div>
-          <label>Resident level *</label>
-          <select id="regLevel">
-            <option value="R5">R5</option>
-            <option value="R4">R4</option>
-            <option value="R3">R3</option>
-          </select>
-          <div id="errRegLevel" class="err"></div>
-        </div>
-        <div>
-          <label>Details *</label>
-          <textarea id="regDetails" placeholder="Program / phone / notes"></textarea>
-          <div id="errRegDetails" class="err"></div>
+          <label>Passcode *</label>
+          <input id="loginPass" type="password" placeholder="Enter passcode" />
+          <div id="errLoginPass" class="err"></div>
         </div>
       </div>
 
       <div class="row" style="justify-content:flex-end; margin-top:10px;">
-        <button id="registerBtn" type="button" style="max-width: 240px;">Register</button>
+        <button id="loginBtn" type="button" style="max-width: 240px;">Login</button>
       </div>
-      <div id="regOk" class="ok"></div>
+      <div id="loginOk" class="ok"></div>
+
+      <div class="muted" style="margin-top:10px;">
+        ⚠️ Note: This is still a client-side login (HTML app). Anyone who can view the page source could potentially discover how it works.
+        For real security, enforce auth on a server (recommended for MRN data).
+      </div>
     </div>
 
     <!-- Resident submission -->
@@ -188,7 +180,7 @@
           </div>
           <div style="display:flex; gap:10px; align-items:center; margin-top:8px;">
             <input id="complication" type="checkbox" style="width:auto;" />
-            <span style="font-size:13px;">Complications </span>
+            <span style="font-size:13px;">Complications</span>
           </div>
 
           <div id="compTypeWrap" class="hidden" style="margin-top:10px;">
@@ -206,7 +198,7 @@
       </div>
 
       <div class="muted" style="margin-top:10px;">
-        Residents can view <b>their own submissions</b> (My submissions). KPI data remains admin-only.
+        Residents can view <b>their own submissions</b> (My submissions). Admin sees all cases.
       </div>
     </div>
 
@@ -215,16 +207,10 @@
       <div class="row">
         <div>
           <h2 style="margin:0;font-size:16px;">My submissions</h2>
-          <div class="muted">Shows only cases submitted with your email.</div>
+          <div class="muted">Shows only cases submitted by you.</div>
         </div>
         <div class="row" style="justify-content:flex-end;">
-          <div style="min-width:220px;">
-            <label>Filter by clinic month</label>
-            <select id="myMonthFilter">
-              <option value="__ALL__">All months</option>
-            </select>
-          </div>
-          <button id="myExportBtn" class="secondary tiny" type="button">Export my CSV</button>
+          <button id="myRefreshBtn" class="secondary tiny" type="button">Refresh</button>
         </div>
       </div>
 
@@ -254,10 +240,6 @@
           <tbody id="myCaseTbody"></tbody>
         </table>
       </div>
-
-      <div class="muted" style="margin-top:10px;">
-        You can delete only your own submissions (on this device).
-      </div>
     </div>
 
     <!-- Admin panel -->
@@ -265,28 +247,17 @@
       <div class="row">
         <div>
           <h2 style="margin:0;font-size:16px;">Admin dashboard</h2>
-          <div class="muted">PIN-gated (3699). KPIs + case list.</div>
+          <div class="muted">Admin-only: all cases.</div>
         </div>
         <div class="row" style="justify-content:flex-end;">
-          <div style="min-width:220px;">
-            <label>Filter by clinic month</label>
-            <select id="monthFilter">
-              <option value="__ALL__">All months</option>
-            </select>
-          </div>
-          <button id="exportBtn" class="secondary tiny" type="button">Export CSV</button>
-          <button id="clearBtn" class="outline tiny" type="button">Clear local data</button>
+          <button id="adminRefreshBtn" class="secondary tiny" type="button">Refresh</button>
         </div>
       </div>
 
       <div class="sep"></div>
 
-      <div class="kpiGrid" id="kpiGrid"></div>
-
-      <div class="sep"></div>
-
       <div class="row" style="justify-content:space-between;">
-        <h3 style="margin:0;font-size:14px;">Case list</h3>
+        <h3 style="margin:0;font-size:14px;">All cases</h3>
         <span class="muted" id="caseCount"></span>
       </div>
 
@@ -312,583 +283,371 @@
         </table>
       </div>
     </div>
+
   </div>
 
-  <!-- Admin PIN modal -->
-  <div id="adminModal" class="hidden" style="position:fixed; inset:0; background:rgba(0,0,0,.35); display:flex; align-items:center; justify-content:center; padding:18px;">
-    <div class="card" style="max-width:420px; width:100%;">
-      <div class="row"><h3 style="margin:0;">Admin unlock</h3></div>
-      <div style="margin-top:10px;">
-        <label>PIN</label>
-        <input id="pinInput" type="password" placeholder="Enter admin PIN" />
-        <div id="pinErr" class="err"></div>
-      </div>
-      <div class="row" style="justify-content:flex-end; margin-top:10px;">
-        <button id="pinCancel" class="outline tiny" type="button">Cancel</button>
-        <button id="pinOk" class="tiny" type="button">Unlock</button>
-      </div>
-      <div class="muted" style="margin-top:10px;">
-        Note: this is UI-only protection. For real security, use server authentication.
-      </div>
-    </div>
-  </div>
+<script type="module">
+  // ================= FIREBASE (Firestore only; no email-based login) =================
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import {
+    getFirestore,
+    collection,
+    addDoc,
+    getDocs,
+    deleteDoc,
+    doc,
+    query,
+    where,
+    orderBy
+  } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-  <script>
-    // ===== Config =====
-    const STORAGE_KEY = "cataract_clinic_cases_html_v1";
-    const PROFILE_KEY = "cataract_clinic_profile_html_v1";
-    const ADMIN_PIN = "3699";
-    const ALLOWED_DOMAIN = "iau.edu.sa"; // only @iau.edu.sa or subdomains
+  const firebaseConfig = {
+    apiKey: "AIzaSyAKIXLXqtG-fEZ1nsW7MR0S_-5Jtid7tMA",
+    authDomain: "forms-kfhu.firebaseapp.com",
+    projectId: "forms-kfhu",
+    storageBucket: "forms-kfhu.appspot.com",
+    messagingSenderId: "873088302968",
+    appId: "1:873088302968:web:d7a43f5b405563225b528d"
+  };
 
-    const RES_LEVELS = ["R4","R5"];
-    const STATUS = ["Booked","Completed","Cancelled"];
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
 
-    // ===== Helpers =====
-    const $ = (id) => document.getElementById(id);
-    const todayISO = () => new Date().toISOString().slice(0,10);
-    const monthKey = (iso) => (iso ? String(iso).slice(0,7) : "");
-    const isTenDigitMRN = (mrn) => /^[0-9]{10}$/.test(String(mrn||"").trim());
+  // ================= LOGIN USERS (EDIT PASSCODES HERE) =================
+  // IMPORTANT: Change these passcodes to your real ones.
+  // This is still client-side, so do NOT reuse any sensitive passwords.
+  const USERS = {
+    "ali_alsaeed":       { name: "Ali Alsaeed",       role: "resident", level: "R4", passcode: "ALI66" },
+    "nasser_almutlaq":   { name: "Nasser Almutlaq",   role: "resident", level: "R4", passcode: "NASSER77" },
+    "ahmend_alzahrani":  { name: "Ahmed Alzahrani",  role: "resident", level: "R3", passcode: "AHMED55" },
+    "wejdan_almustafa":  { name: "Wejdan Almustafa",  role: "resident", level: "R2", passcode: "WEJDAN44" },
+    "ruba_alamri":       { name: "Ruba Alamri",       role: "resident", level: "R2", passcode: "RUBA33" },
+    "mohammed_alismael": { name: "Mohammed Alismael", role: "resident", level: "R1", passcode: "MOHAMMED22" },
+    "khawlah_aldehailan":{ name: "Khawlah Aldehailan",role: "resident", level: "R1", passcode: "KHAWLAH11" },
+    "admin":             { name: "Admin",             role: "admin",    level: "—",  passcode: "ADMIN-CHANGE-ME" }
+  };
 
-    function isUniversityEmail(email) {
-      const e = String(email||"").trim().toLowerCase();
-      const at = e.indexOf("@");
-      if (at <= 0) return false;
-      const domain = e.slice(at+1);
-      if (!domain.includes(".")) return false;
-      return domain === ALLOWED_DOMAIN || domain.endsWith("." + ALLOWED_DOMAIN);
+  // ================= HELPERS =================
+  const $ = (id) => document.getElementById(id);
+  const todayISO = () => new Date().toISOString().slice(0,10);
+  const isTenDigitMRN = (mrn) => /^[0-9]{10}$/.test(String(mrn||"").trim());
+  const escapeHtml = (s) => String(s ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;" }[c]));
+
+  const PROFILE_KEY = "ct_profile_fixed_users_v1";
+  let profile = JSON.parse(localStorage.getItem(PROFILE_KEY) || "null"); // { username, name, role, resident_level }
+
+  let residentView = "submit"; // "submit" | "my"
+
+  function populateUserDropdown(){
+    const sel = $("loginUser");
+    sel.innerHTML = "";
+    const keys = Object.keys(USERS);
+
+    // Put admin at bottom
+    keys.sort((a,b) => (a==="admin") - (b==="admin") || USERS[a].name.localeCompare(USERS[b].name));
+
+    sel.appendChild(new Option("Select user…", ""));
+    for (const k of keys){
+      sel.appendChild(new Option(USERS[k].name, k));
+    }
+  }
+
+  // ================= PROFILE PILL =================
+  function setProfilePill(){
+    if (!profile){
+      $("profilePill").classList.add("hidden");
+      $("profilePill").innerHTML = "";
+      return;
     }
 
-    function safeDiv(a,b){ return b ? a/b : NaN; }
-    function formatPct(x){ return Number.isFinite(x) ? (x*100).toFixed(1)+"%" : "–"; }
-    function stdevSample(vals){
-      const nums = vals.filter(v => Number.isFinite(v));
-      const n = nums.length;
-      if (n < 2) return 0;
-      const mean = nums.reduce((s,v)=>s+v,0)/n;
-      const varSum = nums.reduce((s,v)=>s+(v-mean)**2,0);
-      return Math.sqrt(varSum/(n-1));
-    }
+    $("profilePill").classList.remove("hidden");
 
-    function loadRows(){
-      try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]"); }
-      catch { return []; }
-    }
-    function saveRows(rows){
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(rows));
-    }
+    const roleTag = profile.role === "admin" ? "Admin" : "Resident";
+    const levelTag = profile.role === "admin" ? "" : `(${profile.resident_level})`;
 
-    function loadProfile(){
-      try { return JSON.parse(localStorage.getItem(PROFILE_KEY) || "null"); }
-      catch { return null; }
-    }
-    function saveProfile(p){
-      localStorage.setItem(PROFILE_KEY, JSON.stringify(p));
-    }
-    function clearProfile(){
-      localStorage.removeItem(PROFILE_KEY);
-    }
+    $("profilePill").innerHTML = `
+      <span><b>${escapeHtml(profile.name)}</b> ${escapeHtml(levelTag)} <span class="muted">— ${escapeHtml(roleTag)}</span></span>
+      ${profile.role !== "admin" ? `<button id="goSubmitBtn" class="outline tiny" type="button">Submit</button>` : ""}
+      ${profile.role !== "admin" ? `<button id="goMyBtn" class="outline tiny" type="button">My submissions</button>` : ""}
+      <button id="logoutBtn" class="outline tiny" type="button">Log out</button>
+    `;
 
-    function clearErrors(prefixIds){
-      prefixIds.forEach(id => { const el = $(id); if (el) el.textContent = ""; });
-      $("submitErrTop").textContent = "";
-    }
-
-    function csvEscape(v){
-      const s = String(v ?? "");
-      if (s.includes(",") || s.includes("\n") || s.includes('"')) return '"' + s.replaceAll('"','""') + '"';
-      return s;
-    }
-
-    function toCSV(rows){
-      const header = ["clinic_date","mrn","eye","complexity","resident_email","resident","resident_level","consultant","surgery_date","status","cancellation_reason","override","complication","complication_type"];
-      const lines = [header.join(",")];
-      for (const r of rows){
-        lines.push(header.map(k=>{
-          const v = r[k];
-          if (typeof v === "boolean") return csvEscape(v ? "1" : "0");
-          return csvEscape(v);
-        }).join(","));
-      }
-      return lines.join("\n");
-    }
-
-    function downloadText(filename, text){
-      const blob = new Blob([text], {type:"text/plain;charset=utf-8"});
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url; a.download = filename;
-      document.body.appendChild(a); a.click(); a.remove();
-      URL.revokeObjectURL(url);
-    }
-
-    function escapeHtml(s){
-      return String(s ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;" }[c]));
-    }
-
-    // ===== State =====
-    let rows = loadRows();
-    let profile = loadProfile();
-    let adminUnlocked = false;
-
-    // NEW: resident view mode
-    let residentView = "submit"; // "submit" | "my"
-
-    // ===== UI setup =====
-    function setDefaultDates(){
-      $("clinicDate").value = todayISO();
-      $("surgeryDate").value = todayISO();
-    }
-
-    function setProfilePill(){
-      if (!profile){
-        $("profilePill").classList.add("hidden");
-        $("profilePill").innerHTML = "";
-        return;
-      }
-      $("profilePill").classList.remove("hidden");
-      $("profilePill").innerHTML = `
-        <span class="muted">Resident:</span>
-        <b>${escapeHtml(profile.name)}</b>
-        <span class="muted">(${escapeHtml(profile.resident_level)})</span>
-        <span class="muted">— ${escapeHtml(profile.email)}</span>
-        <button id="goSubmitBtn" class="outline tiny" type="button">Submit</button>
-        <button id="goMyBtn" class="outline tiny" type="button">My submissions</button>
-        <button id="logoutBtn" class="outline tiny" type="button">Log out</button>
-      `;
-
+    if (profile.role !== "admin"){
       $("goSubmitBtn").onclick = () => { residentView = "submit"; render(); };
       $("goMyBtn").onclick = () => { residentView = "my"; render(); };
-
-      $("logoutBtn").onclick = () => {
-        clearProfile();
-        profile = null;
-        adminUnlocked = false;
-        residentView = "submit";
-        $("adminLockBtn").classList.add("hidden");
-        render();
-      };
     }
 
-    function showRegistration(){
-      $("registrationCard").classList.remove("hidden");
-      $("submissionCard").classList.add("hidden");
-      $("myCasesCard").classList.add("hidden");
-      $("adminCard").classList.add("hidden");
-      $("regOk").textContent = "";
-      $("topMsg").textContent = "";
-      setProfilePill();
-    }
-
-    function showSubmission(){
-      $("registrationCard").classList.add("hidden");
-      $("submissionCard").classList.remove("hidden");
-      $("myCasesCard").classList.add("hidden");
-      $("adminCard").classList.add("hidden"); // residents NEVER see admin card
-      $("residentAuto").value = `${profile.name} (${profile.resident_level}) — ${profile.email}`;
-      setDefaultDates();
-      $("submitOk").textContent = "";
-      $("topMsg").textContent = "";
-      setProfilePill();
-    }
-
-    function showMyCases(){
-      $("registrationCard").classList.add("hidden");
-      $("submissionCard").classList.add("hidden");
-      $("myCasesCard").classList.remove("hidden");
-      $("adminCard").classList.add("hidden"); // residents NEVER see admin card
-      $("topMsg").textContent = "";
-      setProfilePill();
-      renderMyMonths();
-      renderMyCaseTable();
-    }
-
-    function openAdminModal(){
-      $("adminModal").classList.remove("hidden");
-      $("pinInput").value = "";
-      $("pinErr").textContent = "";
-      $("pinInput").focus();
-    }
-    function closeAdminModal(){
-      $("adminModal").classList.add("hidden");
-    }
-
-    function renderMonths(){
-      const sel = $("monthFilter");
-      const current = sel.value || "__ALL__";
-      const set = new Set(rows.map(r => monthKey(r.clinic_date)).filter(Boolean));
-      const months = Array.from(set).sort();
-      sel.innerHTML = `<option value="__ALL__">All months</option>` + months.map(m=>`<option value="${m}">${m}</option>`).join("");
-      sel.value = months.includes(current) ? current : "__ALL__";
-    }
-
-    function getFilteredRows(){
-      const fm = $("monthFilter").value;
-      if (!fm || fm === "__ALL__") return rows;
-      return rows.filter(r => monthKey(r.clinic_date) === fm);
-    }
-
-    // ===== Resident: My submissions (NEW) =====
-    function myRowsAll(){
-      if (!profile) return [];
-      return rows.filter(r => String(r.resident_email||"").toLowerCase() === String(profile.email||"").toLowerCase());
-    }
-
-    function myRowsFiltered(){
-      const all = myRowsAll();
-      const fm = $("myMonthFilter").value;
-      if (!fm || fm === "__ALL__") return all;
-      return all.filter(r => monthKey(r.clinic_date) === fm);
-    }
-
-    function renderMyMonths(){
-      const sel = $("myMonthFilter");
-      const current = sel.value || "__ALL__";
-      const set = new Set(myRowsAll().map(r => monthKey(r.clinic_date)).filter(Boolean));
-      const months = Array.from(set).sort();
-      sel.innerHTML = `<option value="__ALL__">All months</option>` + months.map(m=>`<option value="${m}">${m}</option>`).join("");
-      sel.value = months.includes(current) ? current : "__ALL__";
-    }
-
-    function renderMyCaseTable(){
-      const filtered = myRowsFiltered();
-      $("myCaseCount").textContent = `${filtered.length} cases`;
-
-      const tbody = $("myCaseTbody");
-      tbody.innerHTML = "";
-
-      for (const r of filtered){
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td>${escapeHtml(r.clinic_date||"")}</td>
-          <td>${escapeHtml(r.mrn||"")}</td>
-          <td>${escapeHtml(r.eye||"")}</td>
-          <td>${escapeHtml(r.complexity||"")}</td>
-          <td>${escapeHtml(r.consultant||"")}</td>
-          <td>${escapeHtml(r.surgery_date||"")}</td>
-          <td>${escapeHtml(r.status||"")}${r.status==="Cancelled" && r.cancellation_reason ? "<div class='muted'>"+escapeHtml(r.cancellation_reason)+"</div>" : ""}</td>
-          <td>${r.override ? "Yes" : "No"}</td>
-          <td>${r.complication ? "Yes" : "No"}${r.complication_type ? "<div class='muted'>"+escapeHtml(r.complication_type)+"</div>" : ""}</td>
-          <td><button class="outline tiny" data-id="${escapeHtml(r.id)}" type="button">Delete</button></td>
-        `;
-        tbody.appendChild(tr);
-      }
-
-      tbody.querySelectorAll("button[data-id]").forEach(btn => {
-        btn.onclick = () => {
-          const id = btn.getAttribute("data-id");
-          const target = rows.find(x => x.id === id);
-          // Extra guard: only allow deleting own rows
-          if (!target || String(target.resident_email||"").toLowerCase() !== String(profile.email||"").toLowerCase()){
-            alert("You can only delete your own submissions.");
-            return;
-          }
-          if (!confirm("Delete this submission?")) return;
-
-          rows = rows.filter(x => x.id !== id);
-          saveRows(rows);
-          renderMyMonths();
-          renderMyCaseTable();
-        };
-      });
-    }
-
-    function buildKPIs(){
-      const filtered = getFilteredRows();
-      const booked = filtered.length;
-      const cancelled = filtered.filter(r => r.status === "Cancelled").length;
-      const completed = filtered.filter(r => r.status === "Completed").length;
-      const overrides = filtered.filter(r => !!r.override).length;
-
-      const residents = Array.from(new Set(filtered.map(r => (r.resident||"").trim()).filter(Boolean))).sort();
-      const completedByResident = new Map();
-      for (const r of filtered){
-        if (r.status !== "Completed") continue;
-        const k = (r.resident||"(Unassigned)");
-        completedByResident.set(k, (completedByResident.get(k)||0) + 1);
-      }
-      const counts = residents.map(n => completedByResident.get(n) || 0);
-      const mean = safeDiv(counts.reduce((a,b)=>a+b,0), residents.length);
-      const sd = stdevSample(counts);
-
-      const compByLevel = {};
-      for (const lvl of RES_LEVELS){
-        const surg = filtered.filter(r => r.status==="Completed" && r.resident_level===lvl).length;
-        const comp = filtered.filter(r => r.status==="Completed" && r.resident_level===lvl && r.complication).length;
-        compByLevel[lvl] = { surg, comp, rate: safeDiv(comp, surg) };
-      }
-
-      const kpis = [
-        { t: "Mean cases / resident", v: Number.isFinite(mean) ? mean.toFixed(2) : "–" },
-        { t: "Equity (SD)", v: sd.toFixed(2) },
-        { t: "Cancellation rate", v: formatPct(safeDiv(cancelled, booked)) },
-        { t: "Consultant override rate", v: formatPct(safeDiv(overrides, booked)) },
-        { t: "Completed (count)", v: String(completed) },
-      ];
-
-      $("kpiGrid").innerHTML = kpis.map(x => `
-        <div class="kpi">
-          <div class="t">${x.t}</div>
-          <div class="v">${x.v}</div>
-        </div>
-      `).join("");
-
-      const extra = RES_LEVELS.map(lvl => `
-        <div class="kpi">
-          <div class="t">Complication rate — ${lvl}</div>
-          <div class="v">${formatPct(compByLevel[lvl].rate)}</div>
-          <div class="muted">Surgeries: ${compByLevel[lvl].surg} • Complications: ${compByLevel[lvl].comp}</div>
-        </div>
-      `).join("");
-
-      $("kpiGrid").insertAdjacentHTML("beforeend", extra);
-    }
-
-    function renderCaseTable(){
-      const filtered = getFilteredRows();
-      $("caseCount").textContent = `${filtered.length} cases`;
-      const tbody = $("caseTbody");
-      tbody.innerHTML = "";
-
-      for (const r of filtered){
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td>${escapeHtml(r.clinic_date||"")}</td>
-          <td>${escapeHtml(r.mrn||"")}</td>
-          <td>${escapeHtml(r.eye||"")}</td>
-          <td>${escapeHtml(r.complexity||"")}</td>
-          <td>${escapeHtml(r.resident||"")}<div class="muted">${escapeHtml(r.resident_email||"")}</div></td>
-          <td>${escapeHtml(r.resident_level||"")}</td>
-          <td>${escapeHtml(r.consultant||"")}</td>
-          <td>${escapeHtml(r.surgery_date||"")}</td>
-          <td>${escapeHtml(r.status||"")}</td>
-          <td>${r.override ? "Yes" : "No"}</td>
-          <td>${r.complication ? "Yes" : "No"}${r.complication_type ? "<div class='muted'>"+escapeHtml(r.complication_type)+"</div>" : ""}</td>
-          <td><button class="outline tiny" data-id="${escapeHtml(r.id)}" type="button">Delete</button></td>
-        `;
-        tbody.appendChild(tr);
-      }
-
-      tbody.querySelectorAll("button[data-id]").forEach(btn => {
-        btn.onclick = () => {
-          const id = btn.getAttribute("data-id");
-          rows = rows.filter(x => x.id !== id);
-          saveRows(rows);
-          renderAdmin();
-        };
-      });
-    }
-
-    function renderAdmin(){
-      if (!adminUnlocked){
-        $("adminCard").classList.add("hidden");
-        return;
-      }
-      $("adminCard").classList.remove("hidden");
-      renderMonths();
-      buildKPIs();
-      renderCaseTable();
-    }
-
-    function render(){
-      setProfilePill();
-
-      if (!profile){
-        showRegistration();
-      } else {
-        if (residentView === "my") showMyCases();
-        else showSubmission();
-      }
-
-      // admin UI is separate and only shown if unlocked
-      renderAdmin();
-    }
-
-    // ===== Registration =====
-    $("registerBtn").onclick = () => {
-      clearErrors(["errRegEmail","errRegName","errRegLevel","errRegDetails"]);
-      $("regOk").textContent = "";
-
-      const email = $("regEmail").value.trim().toLowerCase();
-      const name = $("regName").value.trim();
-      const level = $("regLevel").value;
-      const details = $("regDetails").value.trim();
-
-      let ok = true;
-      if (!email) { $("errRegEmail").textContent = "Required"; ok = false; }
-      else if (!isUniversityEmail(email)) { $("errRegEmail").textContent = "Must be @iau.edu.sa (subdomains allowed)"; ok = false; }
-
-      if (!name) { $("errRegName").textContent = "Required"; ok = false; }
-      if (!level) { $("errRegLevel").textContent = "Required"; ok = false; }
-      if (!details) { $("errRegDetails").textContent = "Required"; ok = false; }
-
-      if (!ok) return;
-
-      profile = { email, name, details, resident_level: level };
-      saveProfile(profile);
-
-      $("regOk").textContent = "Registered successfully.";
+    $("logoutBtn").onclick = () => {
+      localStorage.removeItem(PROFILE_KEY);
+      profile = null;
       residentView = "submit";
       render();
     };
+  }
 
-    // ===== Submission =====
-    $("mrn").addEventListener("input", () => {
-      $("mrn").value = $("mrn").value.replace(/[^0-9]/g,"").slice(0,10);
-    });
+  // ================= RENDER =================
+  function render(){
+    setProfilePill();
+    $("topMsg").textContent = "";
 
-    function syncConditionalFields(){
-      const st = $("status").value;
-      $("cancelReasonWrap").classList.toggle("hidden", st !== "Cancelled");
-
-      const compAllowed = (st === "Completed");
-      $("complication").disabled = !compAllowed;
-      if (!compAllowed) { $("complication").checked = false; }
-      $("compTypeWrap").classList.toggle("hidden", !($("complication").checked && st === "Completed"));
+    if (!profile){
+      $("loginCard").classList.remove("hidden");
+      $("submissionCard").classList.add("hidden");
+      $("myCasesCard").classList.add("hidden");
+      $("adminCard").classList.add("hidden");
+      return;
     }
-    $("status").addEventListener("change", syncConditionalFields);
-    $("complication").addEventListener("change", syncConditionalFields);
 
-    $("submitBtn").onclick = () => {
-      $("submitOk").textContent = "";
-      $("submitErrTop").textContent = "";
-      clearErrors(["errClinicDate","errMrn","errEye","errComplexity","errConsultant","errSurgeryDate","errStatus","errCancelReason","errComplication","errCompType"]);
+    $("loginCard").classList.add("hidden");
 
-      const f = {
-        clinic_date: $("clinicDate").value,
-        mrn: $("mrn").value.trim(),
-        eye: $("eye").value,
-        complexity: $("complexity").value,
-        resident_email: profile.email,
-        resident: profile.name,
-        resident_level: profile.resident_level,
-        consultant: $("consultant").value.trim(),
-        surgery_date: $("surgeryDate").value,
-        status: $("status").value,
-        cancellation_reason: $("cancelReason").value.trim(),
-        override: $("override").checked,
-        complication: $("complication").checked,
-        complication_type: $("compType").value.trim(),
-      };
+    if (profile.role === "admin"){
+      $("submissionCard").classList.add("hidden");
+      $("myCasesCard").classList.add("hidden");
+      $("adminCard").classList.remove("hidden");
+      loadAdminData();
+      return;
+    }
 
-      let ok = true;
+    // resident
+    $("adminCard").classList.add("hidden");
 
-      if (!f.clinic_date) { $("errClinicDate").textContent = "Required"; ok = false; }
-      if (!isTenDigitMRN(f.mrn)) { $("errMrn").textContent = "MRN must be exactly 10 digits"; ok = false; }
-      if (!f.eye) { $("errEye").textContent = "Required"; ok = false; }
-      if (!f.complexity) { $("errComplexity").textContent = "Required"; ok = false; }
-      if (!f.consultant) { $("errConsultant").textContent = "Required"; ok = false; }
-      if (!f.surgery_date) { $("errSurgeryDate").textContent = "Required"; ok = false; }
-      if (!f.status) { $("errStatus").textContent = "Required"; ok = false; }
+    $("residentAuto").value = `${profile.name} (${profile.resident_level})`;
 
-      if (f.status === "Cancelled" && !f.cancellation_reason) {
-        $("errCancelReason").textContent = "Required when status is Cancelled";
-        ok = false;
-      }
+    if (residentView === "submit"){
+      $("submissionCard").classList.remove("hidden");
+      $("myCasesCard").classList.add("hidden");
+    } else {
+      $("submissionCard").classList.add("hidden");
+      $("myCasesCard").classList.remove("hidden");
+      loadMyCases();
+    }
+  }
 
-      if (f.complication && f.status !== "Completed") {
-        $("errComplication").textContent = "Complication only allowed if status is Completed";
-        ok = false;
-      }
+  // ================= LOGIN =================
+  $("loginBtn").onclick = () => {
+    $("errLoginUser").textContent = "";
+    $("errLoginPass").textContent = "";
+    $("loginOk").textContent = "";
 
-      if (f.complication && f.status === "Completed" && !f.complication_type) {
-        $("errCompType").textContent = "Required when complication is checked";
-        ok = false;
-      }
+    const username = $("loginUser").value;
+    const pass = $("loginPass").value;
 
-      if (!ok) {
-        $("submitErrTop").textContent = "Please fix the highlighted fields.";
-        return;
-      }
+    if (!username){
+      $("errLoginUser").textContent = "Required";
+      return;
+    }
+    if (!pass){
+      $("errLoginPass").textContent = "Required";
+      return;
+    }
 
-      const row = {
-        id: (crypto && crypto.randomUUID) ? crypto.randomUUID() : (Date.now()+"-"+Math.random()),
-        ...f,
-        created_at: new Date().toISOString(),
-      };
+    const u = USERS[username];
+    if (!u || pass !== u.passcode){
+      $("errLoginPass").textContent = "Invalid passcode";
+      return;
+    }
 
-      rows = [row, ...rows];
-      saveRows(rows);
-
-      $("clinicDate").value = todayISO();
-      $("mrn").value = "";
-      $("eye").value = "OD";
-      $("complexity").value = "Simple";
-      $("consultant").value = "";
-      $("surgeryDate").value = todayISO();
-      $("status").value = "Booked";
-      $("cancelReason").value = "";
-      $("override").checked = false;
-      $("complication").checked = false;
-      $("compType").value = "";
-      syncConditionalFields();
-
-      $("submitOk").textContent = "Submitted successfully.";
-
-      // keep "My submissions" accurate if they switch after submit
-      if ($("myMonthFilter")) renderMyMonths();
+    profile = {
+      username,
+      name: u.name,
+      role: u.role,
+      resident_level: u.level
     };
 
-    // ===== Admin =====
-    $("adminBtn").onclick = () => {
-      if (adminUnlocked) return;
-      openAdminModal();
-    };
-    $("adminLockBtn").onclick = () => {
-      adminUnlocked = false;
-      $("adminLockBtn").classList.add("hidden");
-      render();
-    };
-
-    $("pinCancel").onclick = closeAdminModal;
-    $("pinOk").onclick = () => {
-      const pin = $("pinInput").value.trim();
-      if (pin !== ADMIN_PIN){
-        $("pinErr").textContent = "Incorrect PIN";
-        return;
-      }
-      adminUnlocked = true;
-      $("adminLockBtn").classList.remove("hidden");
-      closeAdminModal();
-      renderAdmin();
-    };
-
-    $("monthFilter").addEventListener("change", () => {
-      if (!adminUnlocked) return;
-      buildKPIs();
-      renderCaseTable();
-    });
-
-    $("exportBtn").onclick = () => {
-      if (!adminUnlocked) return;
-      const text = toCSV(rows);
-      downloadText("cataract_clinic_cases.csv", text);
-    };
-
-    $("clearBtn").onclick = () => {
-      if (!adminUnlocked) return;
-      if (!confirm("Clear ALL local data? This cannot be undone.")) return;
-      rows = [];
-      saveRows(rows);
-      renderAdmin();
-      if (profile) { renderMyMonths(); renderMyCaseTable(); }
-    };
-
-    // ===== Resident: My submissions events (NEW) =====
-    $("myMonthFilter").addEventListener("change", () => {
-      if (!profile) return;
-      renderMyCaseTable();
-    });
-
-    $("myExportBtn").onclick = () => {
-      if (!profile) return;
-      const text = toCSV(myRowsFiltered());
-      downloadText("my_cataract_cases.csv", text);
-    };
-
-    // ===== Init =====
-    setDefaultDates();
-    syncConditionalFields();
+    localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+    $("loginPass").value = "";
+    $("loginOk").textContent = "Logged in successfully.";
     render();
-  </script>
+  };
+
+  // ================= SUBMIT CASE =================
+  $("mrn").addEventListener("input", () => {
+    $("mrn").value = $("mrn").value.replace(/[^0-9]/g,"").slice(0,10);
+  });
+
+  function syncConditionalFields(){
+    const st = $("status").value;
+    $("cancelReasonWrap").classList.toggle("hidden", st !== "Cancelled");
+    const compAllowed = (st === "Completed");
+    $("complication").disabled = !compAllowed;
+    if (!compAllowed) $("complication").checked = false;
+    $("compTypeWrap").classList.toggle("hidden", !($("complication").checked && st === "Completed"));
+  }
+  $("status").addEventListener("change", syncConditionalFields);
+  $("complication").addEventListener("change", syncConditionalFields);
+
+  function clearSubmitErrors(){
+    $("submitErrTop").textContent = "";
+    $("errClinicDate").textContent = "";
+    $("errMrn").textContent = "";
+    $("errConsultant").textContent = "";
+    $("errSurgeryDate").textContent = "";
+    $("errCancelReason").textContent = "";
+    $("errCompType").textContent = "";
+    $("errComplication").textContent = "";
+  }
+
+  $("submitBtn").onclick = async () => {
+    $("submitOk").textContent = "";
+    clearSubmitErrors();
+
+    const data = {
+      clinic_date: $("clinicDate").value,
+      mrn: $("mrn").value.trim(),
+      eye: $("eye").value,
+      complexity: $("complexity").value,
+      resident: profile.name,
+      resident_username: profile.username, // <-- key for ownership
+      resident_level: profile.resident_level,
+      consultant: $("consultant").value.trim(),
+      surgery_date: $("surgeryDate").value,
+      status: $("status").value,
+      cancellation_reason: $("cancelReason").value.trim(),
+      override: $("override").checked,
+      complication: $("complication").checked,
+      complication_type: $("compType").value.trim(),
+      created_at: new Date()
+    };
+
+    let ok = true;
+    if (!data.clinic_date) { $("errClinicDate").textContent = "Required"; ok = false; }
+    if (!isTenDigitMRN(data.mrn)) { $("errMrn").textContent = "MRN must be exactly 10 digits"; ok = false; }
+    if (!data.consultant) { $("errConsultant").textContent = "Required"; ok = false; }
+    if (!data.surgery_date) { $("errSurgeryDate").textContent = "Required"; ok = false; }
+    if (data.status === "Cancelled" && !data.cancellation_reason) { $("errCancelReason").textContent = "Required when Cancelled"; ok = false; }
+    if (data.complication && data.status !== "Completed") { $("errComplication").textContent = "Complication only allowed if status is Completed"; ok = false; }
+    if (data.complication && data.status === "Completed" && !data.complication_type) { $("errCompType").textContent = "Required when complication is checked"; ok = false; }
+
+    if (!ok) {
+      $("submitErrTop").textContent = "Please fix the highlighted fields.";
+      return;
+    }
+
+    await addDoc(collection(db, "cases"), data);
+
+    // reset minimal fields
+    $("mrn").value = "";
+    $("consultant").value = "";
+    $("override").checked = false;
+    $("complication").checked = false;
+    $("compType").value = "";
+    $("status").value = "Booked";
+    $("cancelReason").value = "";
+    syncConditionalFields();
+
+    $("submitOk").textContent = "Submitted successfully.";
+  };
+
+  // ================= LOAD MY CASES =================
+  async function loadMyCases(){
+    $("myCaseCount").textContent = "Loading…";
+
+    const q = query(
+      collection(db, "cases"),
+      where("resident_username", "==", profile.username),
+      orderBy("created_at", "desc")
+    );
+
+    const snapshot = await getDocs(q);
+    const tbody = $("myCaseTbody");
+    tbody.innerHTML = "";
+
+    let count = 0;
+    snapshot.forEach(docSnap => {
+      count++;
+      const r = docSnap.data();
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${escapeHtml(r.clinic_date || "")}</td>
+        <td>${escapeHtml(r.mrn || "")}</td>
+        <td>${escapeHtml(r.eye || "")}</td>
+        <td>${escapeHtml(r.complexity || "")}</td>
+        <td>${escapeHtml(r.consultant || "")}</td>
+        <td>${escapeHtml(r.surgery_date || "")}</td>
+        <td>${escapeHtml(r.status || "")}</td>
+        <td>${r.override ? "Yes" : "No"}</td>
+        <td>${r.complication ? "Yes" : "No"}</td>
+        <td><button class="outline tiny" data-id="${docSnap.id}" type="button">Delete</button></td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    $("myCaseCount").textContent = `${count} cases`;
+
+    tbody.querySelectorAll("button[data-id]").forEach(btn => {
+      btn.onclick = async () => {
+        if (!confirm("Delete this case?")) return;
+        await deleteDoc(doc(db, "cases", btn.dataset.id));
+        loadMyCases();
+      };
+    });
+  }
+
+  $("myRefreshBtn").onclick = () => loadMyCases();
+
+  // ================= ADMIN: LOAD ALL CASES =================
+  async function loadAdminData(){
+    $("caseCount").textContent = "Loading…";
+
+    const q = query(collection(db, "cases"), orderBy("created_at", "desc"));
+    const snapshot = await getDocs(q);
+
+    const tbody = $("caseTbody");
+    tbody.innerHTML = "";
+
+    let count = 0;
+    snapshot.forEach(docSnap => {
+      count++;
+      const r = docSnap.data();
+
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${escapeHtml(r.clinic_date || "")}</td>
+        <td>${escapeHtml(r.mrn || "")}</td>
+        <td>${escapeHtml(r.eye || "")}</td>
+        <td>${escapeHtml(r.complexity || "")}</td>
+        <td>${escapeHtml(r.resident || "")}</td>
+        <td>${escapeHtml(r.resident_level || "")}</td>
+        <td>${escapeHtml(r.consultant || "")}</td>
+        <td>${escapeHtml(r.surgery_date || "")}</td>
+        <td>${escapeHtml(r.status || "")}</td>
+        <td>${r.override ? "Yes" : "No"}</td>
+        <td>${r.complication ? "Yes" : "No"}</td>
+        <td><button class="outline tiny" data-id="${docSnap.id}" type="button">Delete</button></td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    $("caseCount").textContent = `${count} cases`;
+
+    tbody.querySelectorAll("button[data-id]").forEach(btn => {
+      btn.onclick = async () => {
+        if (!confirm("Delete this case?")) return;
+        await deleteDoc(doc(db, "cases", btn.dataset.id));
+        loadAdminData();
+      };
+    });
+  }
+
+  $("adminRefreshBtn").onclick = () => loadAdminData();
+
+  // ================= INIT =================
+  populateUserDropdown();
+  $("clinicDate").value = todayISO();
+  $("surgeryDate").value = todayISO();
+  syncConditionalFields();
+  render();
+
+  // ================= IMPORTANT FIRESTORE NOTE =================
+  // For true security you must enforce Firestore Security Rules.
+  // With this client-side login, Firestore rules cannot reliably know "who is logged in".
+  // If you keep Firestore open (test mode), anyone can read/write.
+  // Proper solution: use Firebase Auth OR a server (Vercel API) to securely write/read.
+</script>
+
 </body>
+</html>
+    
+  </body>
+  
 </html>
