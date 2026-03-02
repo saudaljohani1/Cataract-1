@@ -48,7 +48,7 @@
     <div class="row">
       <div>
         <h1>Cataract Clinic Case Submission</h1>
-        <p class="sub">Residents login with <b>Username + Password</b>, then submit cases.</p>
+        <p class="sub">Residents register with <b>University Email</b>, then submit cases.</p>
       </div>
       <div class="row" style="justify-content:flex-end">
         <div id="profilePill" class="pill hidden"></div>
@@ -64,34 +64,44 @@
 
     <div class="sep"></div>
 
-    <!-- LOGIN (replaces registration) -->
-    <div id="loginCard" class="card">
+    <!-- Registration -->
+    <div id="registrationCard" class="card">
       <div class="row">
-        <h2 style="margin:0;font-size:16px;">Login</h2>
-        <span class="muted">Use your assigned username & password</span>
+        <h2 style="margin:0;font-size:16px;">Resident registration</h2>
+        <span class="muted">All fields are required</span>
       </div>
 
       <div class="grid two" style="margin-top:10px;">
         <div>
-          <label>Username *</label>
-          <input id="loginUser" placeholder="e.g., ali_alsaeed" autocomplete="username" />
-          <div id="errLoginUser" class="err"></div>
+          <label>University email *</label>
+          <input id="regEmail" placeholder="name@iau.edu.sa" autocomplete="email" />
+          <div id="errRegEmail" class="err"></div>
         </div>
         <div>
-          <label>Password *</label>
-          <input id="loginPass" type="password" placeholder="Password" autocomplete="current-password" />
-          <div id="errLoginPass" class="err"></div>
+          <label>Name *</label>
+          <input id="regName" placeholder="e.g., Your name / Saud" autocomplete="name" />
+          <div id="errRegName" class="err"></div>
+        </div>
+        <div>
+          <label>Resident level *</label>
+          <select id="regLevel">
+            <option value="R5">R5</option>
+            <option value="R4">R4</option>
+            <option value="R3">R3</option>
+          </select>
+          <div id="errRegLevel" class="err"></div>
+        </div>
+        <div>
+          <label>Details *</label>
+          <textarea id="regDetails" placeholder="Program / phone / notes"></textarea>
+          <div id="errRegDetails" class="err"></div>
         </div>
       </div>
 
       <div class="row" style="justify-content:flex-end; margin-top:10px;">
-        <button id="loginBtn" type="button" style="max-width: 240px;">Login</button>
+        <button id="registerBtn" type="button" style="max-width: 240px;">Register</button>
       </div>
-      <div id="loginOk" class="ok"></div>
-
-      <div class="muted" style="margin-top:10px;">
-        Note: this is UI-only protection. For real security, use server authentication (Firebase Auth) + rules.
-      </div>
+      <div id="regOk" class="ok"></div>
     </div>
 
     <!-- Resident submission -->
@@ -205,7 +215,7 @@
       <div class="row">
         <div>
           <h2 style="margin:0;font-size:16px;">My submissions</h2>
-          <div class="muted">Shows only cases submitted by your username.</div>
+          <div class="muted">Shows only cases submitted with your email.</div>
         </div>
         <div class="row" style="justify-content:flex-end;">
           <div style="min-width:220px;">
@@ -322,16 +332,16 @@
       </div>
     </div>
   </div>
-
 <script type="module">
+
 // ================= FIREBASE =================
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import {
-  getFirestore,
-  collection,
-  addDoc,
-  getDocs,
-  deleteDoc,
+import { 
+  getFirestore, 
+  collection, 
+  addDoc, 
+  getDocs, 
+  deleteDoc, 
   doc,
   query,
   where
@@ -349,21 +359,9 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// ================= USERS (username/password) =================
-// NOTE: Client-side passwords are NOT secure. Use Firebase Auth for real deployment.
-const USERS = {
-  "Ali_Alsaeed":        { name: "Ali Alsaeed",        role: "resident", level: "R4", passcode: "ALI66" },
-  "nasser_almutlaq":    { name: "Nasser Almutlaq",    role: "resident", level: "R4", passcode: "NASSER77" },
-  "ahmend_alzahrani":   { name: "Ahmed Alzahrani",    role: "resident", level: "R3", passcode: "AHMED55" },
-  "wejdan_almustafa":   { name: "Wejdan Almustafa",   role: "resident", level: "R2", passcode: "WEJDAN44" },
-  "ruba_alamri":        { name: "Ruba Alamri",        role: "resident", level: "R2", passcode: "RUBA33" },
-  "mohammed_alismael":  { name: "Mohammed Alismael",  role: "resident", level: "R1", passcode: "MOHAMMED22" },
-  "khawlah_aldehailan": { name: "Khawlah Aldehailan", role: "resident", level: "R1", passcode: "KHAWLAH11" },
-  "admin":              { name: "Admin",              role: "admin",    level: "—",  passcode: "ADMIN-CHANGE-ME" }
-};
-
 // ================= HELPERS =================
 const $ = (id) => document.getElementById(id);
+const todayISO = () => new Date().toISOString().slice(0,10);
 const ADMIN_PIN = "3699";
 
 let profile = JSON.parse(localStorage.getItem("profile") || "null");
@@ -372,23 +370,29 @@ let residentView = "submit";
 
 // ================= PROFILE PILL =================
 function setProfilePill(){
+
   if (!profile){
     $("profilePill").classList.add("hidden");
     return;
   }
 
   $("profilePill").classList.remove("hidden");
-  const tag = profile.role === "admin" ? "Admin" : profile.resident_level;
-
   $("profilePill").innerHTML = `
-    <span>${profile.name} (${tag})</span>
+    <span>${profile.name} (${profile.resident_level})</span>
     <button id="goSubmitBtn" class="outline tiny">Submit</button>
     <button id="goMyBtn" class="outline tiny">My submissions</button>
     <button id="logoutBtn" class="outline tiny">Log out</button>
   `;
 
-  $("goSubmitBtn").onclick = () => { residentView = "submit"; render(); };
-  $("goMyBtn").onclick = () => { residentView = "my"; render(); };
+  $("goSubmitBtn").onclick = () => {
+    residentView = "submit";
+    render();
+  };
+
+  $("goMyBtn").onclick = () => {
+    residentView = "my";
+    render();
+  };
 
   $("logoutBtn").onclick = () => {
     localStorage.removeItem("profile");
@@ -399,19 +403,18 @@ function setProfilePill(){
 
 // ================= RENDER =================
 function render(){
+
   setProfilePill();
 
-  // Logged out
   if (!profile){
-    $("loginCard").classList.remove("hidden");
+    $("registrationCard").classList.remove("hidden");
     $("submissionCard").classList.add("hidden");
     $("myCasesCard").classList.add("hidden");
     $("adminCard").classList.add("hidden");
     return;
   }
 
-  // Logged in
-  $("loginCard").classList.add("hidden");
+  $("registrationCard").classList.add("hidden");
 
   // Resident view control
   if (residentView === "submit"){
@@ -423,7 +426,7 @@ function render(){
     loadMyCases();
   }
 
-  // Admin visibility
+  // Admin visibility (independent from resident UI)
   if (adminUnlocked){
     $("adminCard").classList.remove("hidden");
     $("adminLockBtn").classList.remove("hidden");
@@ -433,66 +436,42 @@ function render(){
   }
 
   $("residentAuto").value =
-    profile.name + (profile.role === "resident" ? ` (${profile.resident_level})` : " (Admin)");
+    profile.name + " (" + profile.resident_level + ")";
 }
 
-// ================= LOGIN =================
-$("loginBtn").onclick = () => {
-  $("errLoginUser").textContent = "";
-  $("errLoginPass").textContent = "";
-  $("loginOk").textContent = "";
+// ================= REGISTRATION =================
+$("registerBtn").onclick = () => {
 
-  const username = $("loginUser").value.trim().toLowerCase();
-  const password = $("loginPass").value;
+  const email = $("regEmail").value.trim().toLowerCase();
+  const name = $("regName").value.trim();
+  const level = $("regLevel").value;
 
-  if (!username){
-    $("errLoginUser").textContent = "Username required";
-    return;
-  }
-  if (!password){
-    $("errLoginPass").textContent = "Password required";
+  if (!email.endsWith("@iau.edu.sa")){
+    alert("Use university email");
     return;
   }
 
-  const u = USERS[username];
-  if (!u){
-    $("errLoginUser").textContent = "Unknown username";
-    return;
-  }
-  if (u.passcode !== password){
-    $("errLoginPass").textContent = "Wrong password";
+  if (!name){
+    alert("Name required");
     return;
   }
 
-  // Create session profile
-  profile = {
-    username,
-    name: u.name,
-    role: u.role,
-    resident_level: u.level
-  };
+  profile = { email, name, resident_level: level };
   localStorage.setItem("profile", JSON.stringify(profile));
 
-  // If they logged in as "admin", auto-unlock the admin panel
-  if (u.role === "admin") adminUnlocked = true;
-
-  $("loginOk").textContent = "Logged in successfully";
   render();
 };
 
-// Allow Enter key to login
-$("loginUser").addEventListener("keydown", (e)=>{ if (e.key === "Enter") $("loginBtn").click(); });
-$("loginPass").addEventListener("keydown", (e)=>{ if (e.key === "Enter") $("loginBtn").click(); });
-
 // ================= SUBMIT CASE =================
 $("submitBtn").onclick = async () => {
+
   const data = {
     clinic_date: $("clinicDate").value,
     mrn: $("mrn").value,
     eye: $("eye").value,
     complexity: $("complexity").value,
     resident: profile.name,
-    resident_username: profile.username,
+    resident_email: profile.email,
     resident_level: profile.resident_level,
     consultant: $("consultant").value,
     surgery_date: $("surgeryDate").value,
@@ -510,9 +489,10 @@ $("submitBtn").onclick = async () => {
 
 // ================= LOAD MY CASES =================
 async function loadMyCases(){
+
   const q = query(
     collection(db, "cases"),
-    where("resident_username", "==", profile.username)
+    where("resident_email", "==", profile.email)
   );
 
   const snapshot = await getDocs(q);
@@ -521,21 +501,23 @@ async function loadMyCases(){
   tbody.innerHTML = "";
 
   snapshot.forEach(docSnap => {
+
     const r = docSnap.data();
 
     const tr = document.createElement("tr");
     tr.innerHTML = `
-      <td>${r.clinic_date ?? ""}</td>
-      <td>${r.mrn ?? ""}</td>
-      <td>${r.eye ?? ""}</td>
-      <td>${r.complexity ?? ""}</td>
-      <td>${r.consultant ?? ""}</td>
-      <td>${r.surgery_date ?? ""}</td>
-      <td>${r.status ?? ""}</td>
+      <td>${r.clinic_date}</td>
+      <td>${r.mrn}</td>
+      <td>${r.eye}</td>
+      <td>${r.complexity}</td>
+      <td>${r.consultant}</td>
+      <td>${r.surgery_date}</td>
+      <td>${r.status}</td>
       <td>${r.override ? "Yes" : "No"}</td>
       <td>${r.complication ? "Yes" : "No"}</td>
       <td><button class="outline tiny" data-id="${docSnap.id}">Delete</button></td>
     `;
+
     tbody.appendChild(tr);
   });
 
@@ -549,17 +531,22 @@ async function loadMyCases(){
 }
 
 // ================= ADMIN =================
-$("adminBtn").onclick = () => { $("adminModal").classList.remove("hidden"); };
+$("adminBtn").onclick = () => {
+  $("adminModal").classList.remove("hidden");
+};
 
 $("pinOk").onclick = async () => {
+
   if ($("pinInput").value !== ADMIN_PIN){
     $("pinErr").textContent = "Wrong PIN";
     return;
   }
+
   adminUnlocked = true;
   $("adminModal").classList.add("hidden");
   $("adminCard").classList.remove("hidden");
   $("adminLockBtn").classList.remove("hidden");
+
   loadAdminData();
 };
 
@@ -570,6 +557,7 @@ $("adminLockBtn").onclick = ()=>{
 };
 
 async function loadAdminData(){
+
   const snapshot = await getDocs(collection(db,"cases"));
   const tbody = $("caseTbody");
   tbody.innerHTML = "";
@@ -579,15 +567,15 @@ async function loadAdminData(){
 
     const tr = document.createElement("tr");
     tr.innerHTML = `
-      <td>${r.clinic_date ?? ""}</td>
-      <td>${r.mrn ?? ""}</td>
-      <td>${r.eye ?? ""}</td>
-      <td>${r.complexity ?? ""}</td>
-      <td>${r.resident ?? ""}</td>
-      <td>${r.resident_level ?? ""}</td>
-      <td>${r.consultant ?? ""}</td>
-      <td>${r.surgery_date ?? ""}</td>
-      <td>${r.status ?? ""}</td>
+      <td>${r.clinic_date}</td>
+      <td>${r.mrn}</td>
+      <td>${r.eye}</td>
+      <td>${r.complexity}</td>
+      <td>${r.resident}</td>
+      <td>${r.resident_level}</td>
+      <td>${r.consultant}</td>
+      <td>${r.surgery_date}</td>
+      <td>${r.status}</td>
       <td>${r.override ? "Yes" : "No"}</td>
       <td>${r.complication ? "Yes" : "No"}</td>
       <td></td>
@@ -598,6 +586,8 @@ async function loadAdminData(){
 
 // INIT
 render();
+
 </script>
+ 
 </body>
 </html>
